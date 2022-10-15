@@ -1,32 +1,33 @@
-const expres = require('express');
-const dotenv = require('dotenv');
-const bodyParser = require('body-parser');
-const cors = require('cors')
+const express = require("express");
+const dotenv = require("dotenv");
+const cors = require("cors");
+const mongoose = require("mongoose");
+const profileHandler = require("./routeHandler/profileHandler");
 
-dotenv.config()
-const app = expres();
+dotenv.config();
+const app = express();
 app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json());
 const port = process.env.PORT || 4000;
 
+mongoose
+  .connect(process.env.MONGODB_URI)
+  .then(() => console.log("connection successful"))
+  .catch((err) => console.log(err));
 
-// test api
+// application  route
 
-app.get('/api', (req, res) => {
-    res.send('Hello wrold')
-})
+app.use("/api", profileHandler);
 
+//default error handler
 
-// admin register
-
-app.post('/api/admin/register', (req, res) => {
-    const {firstName, lastName, email, phone, whatsapp, github, skype, english, bangla, hindi } = req.body
-    // console.log(req.body);
-    res.send(req.body)
-})
-
-
+function errorHanlder(err, req, res, next) {
+  if (res.headerSent) {
+    return next(err);
+  }
+  res.status(500).json({ error: err });
+}
 
 app.listen(port, () => {
-    console.log(`App listening on port ${port}`)
-})
+  console.log(`App listening on port ${port}`);
+});
