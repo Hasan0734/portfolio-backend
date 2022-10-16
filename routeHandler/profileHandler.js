@@ -22,46 +22,64 @@ router.get("/admins", async (req, res) => {
 // registe admin
 router.post("/register", async (req, res) => {
   const { firstName, lastName, phone, email, pass, confirmPass } = req?.body;
-  const hashPass = await bcrypt.hashSync(pass, saltRounds);
-  const admin = await Admin.findOne({ email: email });
-  if (!admin) {
-    if (confirmPass) {
-      if (bcrypt.compareSync(confirmPass, hashPass)) {
-        const newAdmin = new Admin({
-          firstName: firstName,
-          lastName: lastName,
-          phone: phone,
-          email: email,
-          pass: hashPass,
-        });
-        await newAdmin.save((err) => {
-          if (err) {
-            // console.log(err);
-            res
-              .status(500)
-              .json({ success: false, error: "There was a serve side error!" });
+  try {
+    const hashPass = await bcrypt.hashSync(pass, saltRounds);
+    const admin = await Admin.find();
+
+    if (admin.length > 0) {
+      res.status(500).json({
+        success: false,
+        error: "Only one admin exist",
+      });
+    } else {
+      const alreadyAdmin = await Admin.findOne({ email: email.toLowerCase() });
+
+      if (!alreadyAdmin) {
+        if (confirmPass) {
+          if (bcrypt.compareSync(confirmPass, hashPass)) {
+            const newAdmin = new Admin({
+              firstName: firstName,
+              lastName: lastName,
+              phone: phone,
+              email: email.toLowerCase(),
+              pass: hashPass,
+            });
+            await newAdmin.save((err) => {
+              if (err) {
+                // console.log(err);
+                res.status(500).json({
+                  success: false,
+                  error: "Internal server error!",
+                });
+              } else {
+                res
+                  .status(200)
+                  .json({ success: true, message: "Register successful" });
+              }
+            });
           } else {
-            res
-              .status(200)
-              .json({ success: true, message: "Register successful" });
+            res.status(500).json({
+              success: false,
+              error: "Confrim Passwrod not matched with password ",
+            });
           }
-        });
+        } else {
+          res.status(500).json({
+            success: false,
+            error: "Confirm password required",
+          });
+        }
       } else {
         res.status(500).json({
           success: false,
-          error: "Confrim Passwrod not matched with password ",
+          error: "Already register",
         });
       }
-    } else {
-      res.status(500).json({
-        success: false,
-        error: "Confirm Password word Required",
-      });
     }
-  } else {
+  } catch (err) {
     res.status(500).json({
       success: false,
-      error: "Already register",
+      error: "Internal server error!",
     });
   }
 });
@@ -71,13 +89,13 @@ router.post("/register", async (req, res) => {
 router.post("/login", async (req, res) => {
   const { email, password } = req?.body;
   if (email && password) {
-    const admin = await Admin.findOne({ email: email });
+    const admin = await Admin.findOne({ email: email.toLowerCase() });
     if (admin) {
       if (bcrypt.compareSync(password, admin.pass)) {
         const token = jwt.sign(
           {
             _id: admin._id,
-            email: admin.email,
+            email: admin.email.toLowerCase(),
           },
           process.env.JWT_SECRET
         );
@@ -88,20 +106,20 @@ router.post("/login", async (req, res) => {
             _id: admin._id,
             firstName: admin.firstName,
             lastName: admin.lastName,
-            email: admin.email,
+            email: admin.email.toLowerCase(),
             phone: admin.phone,
           },
         });
       } else {
         res.status(500).json({
           success: false,
-          error: "Not found",
+          error: "Email and password invalid",
         });
       }
     } else {
       res.status(404).json({
         success: false,
-        error: "Not found",
+        error: "Email and password invalid",
       });
     }
   }

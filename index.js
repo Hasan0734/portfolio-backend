@@ -3,6 +3,7 @@ const dotenv = require("dotenv");
 const cors = require("cors");
 const mongoose = require("mongoose");
 const profileHandler = require("./routeHandler/profileHandler");
+const skillRoute = require("./routeHandler/skillRoute");
 
 dotenv.config();
 const app = express();
@@ -18,6 +19,7 @@ mongoose
 // application  route
 
 app.use("/api", profileHandler);
+app.use("/api", skillRoute);
 
 //default error handler
 

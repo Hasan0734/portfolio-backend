@@ -16,6 +16,7 @@ const registerSchema = mongoose.Schema(
       type: String,
       required: true,
       trim: true,
+      unique: true,
     },
     pass: {
       type: String,
